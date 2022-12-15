@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.prod
+    env_file:
+      - ./.env.prod
+    command: bash -c 'service cron start && python manage.py crontab add && gunicorn core.wsgi:application --bind 0.0.0.0:8000'
+    volumes:
+      - static_volume:/home/app/app/staticfiles
+      - media_volume:/home/app/app/mediafiles
+      - ./app/:/home/app/app/
+    expose:
+      - 8000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13.2
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.env.prod.db
+
+  nginx:
+    build: ./nginx_dev
+    ports:
+      - 1337:80
+    volumes:
+      - static_volume:/home/app/app/staticfiles
+      - media_volume:/home/app/app/mediafiles
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+  # certs:
+  html:
+  vhost: 
